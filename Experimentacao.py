@@ -130,36 +130,36 @@ def extrair_n_folds(experimento):
 
 
 # Definir espaços de busca mais conservadores para economizar memória
-bayesian_search_spaces = {
-    'Regressão Linear': {},
-    'Árvore de Decisão': {
-        'max_depth': [3, 8],  # Reduzido
-        'min_samples_split': [2, 5],  # Reduzido
-    },
-    'Random Forest': {
-        'n_estimators': [30, 80],  # Reduzido significativamente
-        'max_depth': [3, 8],  # Reduzido
-    },
-    'XGBoost': {
-        'n_estimators': [20, 40],  # Reduzido significativamente
-        'max_depth': [3, 4],  # Reduzido
-        'learning_rate': [0.05, 0.2],  # Reduzido
-    },
-    'K-NN': {
-        'n_neighbors': [3, 10],  # Reduzido
-        'weights': ['uniform', 'distance'],
-    },
-    'Regressão Linear Bayesiana': {
-        'alpha_1': [1e-6, 1e-4],  # Reduzido
-        'alpha_2': [1e-6, 1e-4],  # Reduzido
-    },
-    'Redes Neurais': {
-        # 'learning_rate_init': Real(0.001, 0.1, prior='log-uniform'),
-        'hidden_layer_sizes': [(50,), (30,), (50, 30)],
-        'activation': ['relu', 'tanh'],
-        'alpha': [0.0001, 0.001, 0.01],
-    }
-}
+# bayesian_search_spaces = {
+#     'Regressão Linear': {},
+#     'Árvore de Decisão': {
+#         'max_depth': [3, 8],  # Reduzido
+#         'min_samples_split': [2, 5],  # Reduzido
+#     },
+#     'Random Forest': {
+#         'n_estimators': [30, 80],  # Reduzido significativamente
+#         'max_depth': [3, 8],  # Reduzido
+#     },
+#     'XGBoost': {
+#         'n_estimators': [20, 40],  # Reduzido significativamente
+#         'max_depth': [3, 4],  # Reduzido
+#         'learning_rate': [0.05, 0.2],  # Reduzido
+#     },
+#     'K-NN': {
+#         'n_neighbors': [3, 10],  # Reduzido
+#         'weights': ['uniform', 'distance'],
+#     },
+#     'Regressão Linear Bayesiana': {
+#         'alpha_1': [1e-6, 1e-4],  # Reduzido
+#         'alpha_2': [1e-6, 1e-4],  # Reduzido
+#     },
+#     'Redes Neurais': {
+#         # 'learning_rate_init': Real(0.001, 0.1, prior='log-uniform'),
+#         'hidden_layer_sizes': [(50,), (30,), (50, 30)],
+#         'activation': ['relu', 'tanh'],
+#         'alpha': [0.0001, 0.001, 0.01],
+#     }
+# }
 
 # bayesian_search_spaces = {
 
@@ -213,57 +213,55 @@ bayesian_search_spaces = {
 #     }
 # }
 
-# bayesian_search_spaces = {
+bayesian_search_spaces = {
 
-#     'Regressão Linear': {},
+    'Regressão Linear': {},
 
-#     'Árvore de Decisão': {
-#         'max_depth': [3, 5, 8, 12, 16],
-#         'min_samples_split': [2, 5, 10, 20],
-#         'min_samples_leaf': [1, 2, 5, 10],
-#         'max_features': [None, 'sqrt', 'log2']
-#     },
+    'Árvore de Decisão': {
+        'max_depth': [3, 5, 8, 12, 16],
+        'min_samples_split': [2, 5, 10, 20],
+        'min_samples_leaf': [1, 2, 5, 10],
+        'max_features': [None, 'sqrt', 'log2']
+    },
 
-#     'Random Forest': {
-#         'n_estimators': [30, 50, 80],
-#         'max_depth': [5, 10, 20],
-#         'min_samples_split': [ 5, 10],
-#         'min_samples_leaf': [2, 5],
-#         'max_features': ['sqrt', 'log2']
-#     },
+    'Random Forest': {
+        'n_estimators': [30, 50, 80],
+        'max_depth': [5, 10],
+        'min_samples_split': [ 5, 10],
+        'min_samples_leaf': [2, 5],
+        'max_features': ['sqrt', 'log2']
+    },
 
-#     'XGBoost': {
-#         'n_estimators': [50, 100, 200, 300],
-#         'max_depth': [3, 5, 8, 12],
-#         'learning_rate': [0.01, 0.05, 0.1, 0.2],
-#         'subsample': [0.6, 0.8, 1.0],
-#         'colsample_bytree': [0.6, 0.8, 1.0]
-#     },
+    'XGBoost': {
+        'n_estimators': [50, 100, 200, 300],
+        'max_depth': [3, 5, 8, 12],
+        'learning_rate': [0.01, 0.05, 0.1, 0.2],
+        'subsample': [0.6, 0.8, 1.0],
+        'colsample_bytree': [0.6, 0.8, 1.0]
+    },
 
-#     'K-NN': {
-#         'n_neighbors': [3, 5, 7, 9, 11, 15],
-#         'weights': ['uniform', 'distance'],
-#         'metric': ['euclidean', 'manhattan', 'minkowski']
-#     },
+    'K-NN': {
+        'n_neighbors': [3, 5, 7, 9, 11, 15],
+        'weights': ['uniform', 'distance'],
+        'metric': ['euclidean', 'manhattan', 'minkowski']
+    },
 
-#     'Regressão Linear Bayesiana': {
-#         'alpha_1': [1e-6, 1e-5, 1e-4, 1e-3],
-#         'alpha_2': [1e-6, 1e-5, 1e-4, 1e-3],
-#         'lambda_1': [1e-6, 1e-5, 1e-4],
-#         'lambda_2': [1e-6, 1e-5, 1e-4]
-#     },
+    'Regressão Linear Bayesiana': {
+        'alpha_1': [1e-6, 1e-5, 1e-4, 1e-3],
+        'alpha_2': [1e-6, 1e-5, 1e-4, 1e-3],
+        'lambda_1': [1e-6, 1e-5, 1e-4],
+        'lambda_2': [1e-6, 1e-5, 1e-4]
+    },
 
-#     'Redes Neurais': {
-#         'hidden_layer_sizes': [
-#             (20,), (50,), (100,),
-#             (50, 30), (100, 50),
-#             (100, 100)
-#         ],
-#         'activation': ['relu', 'tanh', 'logistic'],
-#         'alpha': [0.0001, 0.001, 0.01, 0.1],
-#         'learning_rate_init': [0.001, 0.01, 0.05]
-#     }
-# }
+    'Redes Neurais': {
+        'hidden_layer_sizes': [
+            (20,), (50, 30),
+        ],
+        'activation': ['relu', 'tanh'],
+        'alpha': [0.0001, 0.01],
+        'learning_rate_init': [0.01, 0.05]
+    }
+}
 
 
 # Lista para armazenar todos os resultados
