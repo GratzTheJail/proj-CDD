@@ -128,6 +128,7 @@ def extrair_n_folds(experimento):
     else:
         return 3 
 
+# Uma versão mais leve dos espaços de busca para economizar memória
 
 # Definir espaços de busca mais conservadores para economizar memória
 # bayesian_search_spaces = {
@@ -217,34 +218,6 @@ resultados_expandidos = []
 total_experimentos = len(df_experimentos)
 experimentos_completados = 0
 
-def contar_combinacoes_grid(param_space):
-    if not param_space:
-        return 1
-    valores = list(param_space.values())
-    total = 1
-    for v in valores:
-        total *= len(v)
-    return total
-
-def estimar_tempo_execucao(nome_tecnica, total_modelos, n_folds, tempo_medio_por_treino=2.5):
-    """
-    tempo_medio_por_treino = segundos por treino de 1 modelo (ajuste conforme sua máquina)
-    """
-    total_treinos = total_modelos * n_folds
-    tempo_estimado_seg = total_treinos * tempo_medio_por_treino
-
-    horas = int(tempo_estimado_seg // 3600)
-    minutos = int((tempo_estimado_seg % 3600) // 60)
-
-    print(
-        f"📊 {nome_tecnica} → "
-        f"{total_modelos} modelos × {n_folds}-Fold = {total_treinos} treinos | "
-        f"⏱️ ~ {horas}h {minutos}min"
-    )
-
-    return tempo_estimado_seg
-
-
 def executar_busca_e_avaliar(
     nome_tecnica,
     modelo,
@@ -282,16 +255,6 @@ def executar_busca_e_avaliar(
         print(f"✅ {nome_tecnica} finalizado (modelo único)")
         return
     try:
-
-        # # ✅ Calcular total de modelos
-        # if tipo_busca == "grid":
-        #     total_modelos = contar_combinacoes_grid(param_space)
-        # else:
-        #     total_modelos = n_iter
-
-        # # ✅ Estimar tempo
-        # estimar_tempo_execucao(nome_tecnica, total_modelos, n_folds)
-
         inicio = time.time()
 
         # ✅ Criar objeto de busca
@@ -332,11 +295,6 @@ def executar_busca_e_avaliar(
 
             # ✅ Corrigir automaticamente parâmetros que vêm como array
             params_corrigidos = {}
-            # for k, v in params.items():
-            #     if isinstance(v, (np.ndarray, list)):
-            #         params_corrigidos[k] = v[0]
-            #     else:
-            #         params_corrigidos[k] = v
             for k, v in params.items():
                 if isinstance(v, np.ndarray):
                     if v.size == 1:
@@ -367,9 +325,6 @@ def executar_busca_e_avaliar(
             nova_linha['Modelo'] = nome_tecnica
             nova_linha['Tipo de Busca'] = tipo_busca
             nova_linha['Tempo Execução (s)'] = round(tempo_real, 2)
-            
-            # nova_linha['R²'] = float(r2)
-            # nova_linha['MSE'] = float(mse)
 
             # ✅ Garantir que R² e MSE sejam escalares
             if isinstance(r2, (list, np.ndarray)):
@@ -442,7 +397,7 @@ for idx, experimento in df_experimentos.iterrows():
 
     try:
         # Configurar o modelo e bayesian search com configurações otimizadas
-        n_iter = 8  # Reduzido significativamente
+        n_iter = 8 
 
         if tecnica == 'Regressão Linear':
             model = LinearRegression()
@@ -550,8 +505,6 @@ for idx, experimento in df_experimentos.iterrows():
 
         elif tecnica == 'Redes Neurais':
             print(f"  Executando Redes Neurais para experimento {idx} com GridSearch (sem scaler)...")
-            # warnings.filterwarnings("ignore", category=ConvergenceWarning)
-
             model = MLPRegressor(
                 random_state=42,
                 max_iter=800,   # limite seguro
