@@ -161,58 +161,6 @@ def extrair_n_folds(experimento):
 #     }
 # }
 
-# bayesian_search_spaces = {
-
-#     'Regressão Linear': {},
-
-#     'Árvore de Decisão': {
-#         'max_depth': [None, 3, 5, 8, 12, 16],
-#         'min_samples_split': [2, 5, 10, 20],
-#         'min_samples_leaf': [1, 2, 5, 10],
-#         'max_features': [None, 'sqrt', 'log2']
-#     },
-
-#     'Random Forest': {
-#         'n_estimators': [50, 100, 200, 300],
-#         'max_depth': [None, 5, 10, 20],
-#         'min_samples_split': [2, 5, 10],
-#         'min_samples_leaf': [1, 2, 5],
-#         'max_features': ['sqrt', 'log2']
-#     },
-
-#     'XGBoost': {
-#         'n_estimators': [50, 100, 200, 300],
-#         'max_depth': [3, 5, 8, 12],
-#         'learning_rate': [0.01, 0.05, 0.1, 0.2],
-#         'subsample': [0.6, 0.8, 1.0],
-#         'colsample_bytree': [0.6, 0.8, 1.0]
-#     },
-
-#     'K-NN': {
-#         'n_neighbors': [3, 5, 7, 9, 11, 15],
-#         'weights': ['uniform', 'distance'],
-#         'metric': ['euclidean', 'manhattan', 'minkowski']
-#     },
-
-#     'Regressão Linear Bayesiana': {
-#         'alpha_1': [1e-6, 1e-5, 1e-4, 1e-3],
-#         'alpha_2': [1e-6, 1e-5, 1e-4, 1e-3],
-#         'lambda_1': [1e-6, 1e-5, 1e-4],
-#         'lambda_2': [1e-6, 1e-5, 1e-4]
-#     },
-
-#     'Redes Neurais': {
-#         'hidden_layer_sizes': [
-#             (20,), (50,), (100,),
-#             (50, 30), (100, 50),
-#             (100, 100)
-#         ],
-#         'activation': ['relu', 'tanh', 'logistic'],
-#         'alpha': [0.0001, 0.001, 0.01, 0.1],
-#         'learning_rate_init': [0.001, 0.01, 0.05]
-#     }
-# }
-
 bayesian_search_spaces = {
 
     'Regressão Linear': {},
@@ -221,23 +169,21 @@ bayesian_search_spaces = {
         'max_depth': [3, 5, 8, 12, 16],
         'min_samples_split': [2, 5, 10, 20],
         'min_samples_leaf': [1, 2, 5, 10],
-        'max_features': [None, 'sqrt', 'log2']
-    },
-
-    'Random Forest': {
-        'n_estimators': [30, 50, 80],
-        'max_depth': [5, 10],
-        'min_samples_split': [ 5, 10],
-        'min_samples_leaf': [2, 5],
         'max_features': ['sqrt', 'log2']
     },
 
+    'Random Forest': {
+        'n_estimators': [30, 80], 
+        'max_depth': [3, 8], 
+        'min_samples_split': [5, 10],
+        'min_samples_leaf': [1, 5],
+    },
+
     'XGBoost': {
-        'n_estimators': [50, 100, 200, 300],
-        'max_depth': [3, 5, 8, 12],
-        'learning_rate': [0.01, 0.05, 0.1, 0.2],
+        'n_estimators': [20, 40],  
+        'max_depth': [3, 4],  
+        'learning_rate': [0.05, 0.2],
         'subsample': [0.6, 0.8, 1.0],
-        'colsample_bytree': [0.6, 0.8, 1.0]
     },
 
     'K-NN': {
@@ -255,11 +201,11 @@ bayesian_search_spaces = {
 
     'Redes Neurais': {
         'hidden_layer_sizes': [
-            (20,), (50, 30),
+            (20,), (50,),
         ],
         'activation': ['relu', 'tanh'],
-        'alpha': [0.0001, 0.01],
-        'learning_rate_init': [0.01, 0.05]
+        'alpha': [0.001, 0.01],
+        'learning_rate_init': [0.001]
     }
 }
 
@@ -270,89 +216,6 @@ resultados_expandidos = []
 # Total de experimentos
 total_experimentos = len(df_experimentos)
 experimentos_completados = 0
-
-# def executar_busca_e_avaliar(
-#     nome_tecnica,
-#     modelo,
-#     param_space,
-#     X_train, X_test,
-#     y_train, y_test,
-#     experimento,
-#     resultados_expandidos,
-#     n_folds=3,
-#     n_iter=8,
-#     tipo_busca="bayes"
-# ):
-#     try:
-#         if tipo_busca == "grid":
-#             busca = GridSearchCV(
-#                 modelo,
-#                 param_space,
-#                 cv=n_folds,
-#                 scoring='r2',
-#                 n_jobs=1,
-#                 verbose=0
-#             )
-#         else:
-#             busca = BayesSearchCV(
-#                 modelo,
-#                 param_space,
-#                 cv=n_folds,
-#                 scoring='r2',
-#                 n_iter=n_iter,
-#                 random_state=42,
-#                 n_jobs=1,
-#                 verbose=0
-#             )
-
-#         busca.fit(X_train, y_train)
-
-#         resultados_cv = busca.cv_results_
-
-#         for i in range(len(resultados_cv['params'])):
-#             params = resultados_cv['params'][i]
-
-#             modelo_temp = modelo.__class__(**params)
-#             modelo_temp.fit(X_train, y_train)
-
-#             y_pred = modelo_temp.predict(X_test)
-
-#             r2 = r2_score(y_test, y_pred)
-#             mse = mean_squared_error(y_test, y_pred)
-
-#             nova_linha = experimento.copy()
-#             nova_linha['R²'] = r2
-#             nova_linha['MSE'] = mse
-#             nova_linha['Modelo'] = nome_tecnica
-
-#             for p, v in params.items():
-#                 nova_linha[p] = v
-
-#             # resultados_expandidos.append(nova_linha)
-#             pd.DataFrame([nova_linha]).to_csv(
-#                 'resultados_experimentacao_bayesian_otimizado.csv',
-#                 mode='a',
-#                 header=not os.path.exists('resultados_experimentacao_bayesian_otimizado.csv'),
-#                 index=False
-#             )
-
-
-#             del modelo_temp, y_pred
-#             gc.collect()
-
-#         busca.cv_results_ = None
-#         del busca
-#         gc.collect()
-
-#     except Exception as e:
-#         nova_linha = experimento.copy()
-#         nova_linha['R²'] = np.nan
-#         nova_linha['MSE'] = np.nan
-#         nova_linha['Erro'] = str(e)
-#         nova_linha['Modelo'] = nome_tecnica
-#         resultados_expandidos.append(nova_linha)
-
-#         gc.collect()
 
 def contar_combinacoes_grid(param_space):
     if not param_space:
@@ -583,9 +446,6 @@ for idx, experimento in df_experimentos.iterrows():
 
         if tecnica == 'Regressão Linear':
             model = LinearRegression()
-            # model.fit(X_train, y_train)
-            # best_model = model
-            # best_params = {}
             executar_busca_e_avaliar(
                 nome_tecnica=tecnica,
                 modelo=model,
@@ -601,50 +461,8 @@ for idx, experimento in df_experimentos.iterrows():
                 tipo_busca="grid"
             )
 
-        # elif tecnica == 'Regressão Polinomial':
-        #     if X.shape[1] > 20:
-        #       print("Ignorando regressão polinomial por excesso de features")
-        #       continue
-        #     pipeline = Pipeline([
-        #         ('polynomialfeatures', PolynomialFeatures(degree=2, interaction_only=True)),
-        #         ('linearregression', LinearRegression())
-        #     ])
-        #     bayes_search = BayesSearchCV(
-        #         pipeline,
-        #         bayesian_search_spaces[tecnica],
-        #         cv=n_folds,
-        #         scoring='r2',
-        #         n_iter=n_iter,
-        #         random_state=42,
-        #         n_jobs=1,  # Manter como 1 para evitar problemas de memória
-        #         verbose=0
-        #     )
-        #     bayes_search.fit(X_train, y_train)
-        #     best_model = bayes_search.best_estimator_
-        #     best_params = bayes_search.best_params_
-        #     # Limpar o objeto de busca para liberar memória
-        #     bayes_search.cv_results_ = None
-        #     del bayes_search
-        #     gc.collect()
-
         elif tecnica == 'Árvore de Decisão':
             model = DecisionTreeRegressor(random_state=42)
-            # bayes_search = BayesSearchCV(
-            #     model,
-            #     bayesian_search_spaces[tecnica],
-            #     cv=n_folds,
-            #     scoring='r2',
-            #     n_iter=n_iter,
-            #     random_state=42,
-            #     n_jobs=1,
-            #     verbose=0
-            # )
-            # bayes_search.fit(X_train, y_train)
-            # best_model = bayes_search.best_estimator_
-            # best_params = bayes_search.best_params_
-            # bayes_search.cv_results_ = None
-            # del bayes_search
-            # gc.collect()
 
             executar_busca_e_avaliar(
                 nome_tecnica=tecnica,
@@ -663,22 +481,6 @@ for idx, experimento in df_experimentos.iterrows():
 
         elif tecnica == 'Random Forest':
             model = RandomForestRegressor(random_state=42, n_jobs=1)  # n_jobs=1 para RF também
-            # bayes_search = BayesSearchCV(
-            #     model,
-            #     bayesian_search_spaces[tecnica],
-            #     cv=n_folds,
-            #     scoring='r2',
-            #     n_iter=n_iter,
-            #     random_state=42,
-            #     n_jobs=1,
-            #     verbose=0
-            # )
-            # bayes_search.fit(X_train, y_train)
-            # best_model = bayes_search.best_estimator_
-            # best_params = bayes_search.best_params_
-            # bayes_search.cv_results_ = None
-            # del bayes_search
-            # gc.collect()
             executar_busca_e_avaliar(
                 nome_tecnica=tecnica,
                 modelo=model,
@@ -696,22 +498,6 @@ for idx, experimento in df_experimentos.iterrows():
 
         elif tecnica == 'XGBoost':
             model = xgb.XGBRegressor(random_state=42, n_jobs=1)  # n_jobs=1 para XGBoost também
-            # bayes_search = BayesSearchCV(
-            #     model,
-            #     bayesian_search_spaces[tecnica],
-            #     cv=n_folds,
-            #     scoring='r2',
-            #     n_iter=n_iter,
-            #     random_state=42,
-            #     n_jobs=1,
-            #     verbose=0
-            # )
-            # bayes_search.fit(X_train, y_train)
-            # best_model = bayes_search.best_estimator_
-            # best_params = bayes_search.best_params_
-            # bayes_search.cv_results_ = None
-            # del bayes_search
-            # gc.collect()
             executar_busca_e_avaliar(
                 nome_tecnica=tecnica,
                 modelo=model,
@@ -729,22 +515,7 @@ for idx, experimento in df_experimentos.iterrows():
 
         elif tecnica == 'K-NN':
             model = KNeighborsRegressor(n_jobs=1)  # n_jobs=1 para K-NN
-            # bayes_search = BayesSearchCV(
-            #     model,
-            #     bayesian_search_spaces[tecnica],
-            #     cv=n_folds,
-            #     scoring='r2',
-            #     n_iter=n_iter,
-            #     random_state=42,
-            #     n_jobs=1,
-            #     verbose=0
-            # )
-            # bayes_search.fit(X_train, y_train)
-            # best_model = bayes_search.best_estimator_
-            # best_params = bayes_search.best_params_
-            # bayes_search.cv_results_ = None
-            # del bayes_search
-            # gc.collect()
+            
             executar_busca_e_avaliar(
                 nome_tecnica=tecnica,
                 modelo=model,
@@ -762,22 +533,6 @@ for idx, experimento in df_experimentos.iterrows():
 
         elif tecnica == 'Regressão Linear Bayesiana':
             model = BayesianRidge()
-            # bayes_search = BayesSearchCV(
-            #     model,
-            #     bayesian_search_spaces[tecnica],
-            #     cv=n_folds,
-            #     scoring='r2',
-            #     n_iter=n_iter,
-            #     random_state=42,
-            #     n_jobs=1,
-            #     verbose=0
-            # )
-            # bayes_search.fit(X_train, y_train)
-            # best_model = bayes_search.best_estimator_
-            # best_params = bayes_search.best_params_
-            # bayes_search.cv_results_ = None
-            # del bayes_search
-            # gc.collect()
             executar_busca_e_avaliar(
                 nome_tecnica=tecnica,
                 modelo=model,
@@ -793,95 +548,6 @@ for idx, experimento in df_experimentos.iterrows():
                 tipo_busca="grid"
             )
 
-        # elif tecnica == 'Redes Neurais':
-        #     print(f"  Espaço de busca para Redes Neurais: {bayesian_search_spaces[tecnica].keys()}")
-        #     print(f"  Parâmetros válidos do MLPRegressor: {MLPRegressor().get_params().keys()}")
-        #     # # Pipeline com scaler para redes neurais
-        #     # pipeline = Pipeline([
-        #     #     ('mlp', MLPRegressor(random_state=42, max_iter=500))  # max_iter reduzido
-        #     # ])
-        #     # bayes_search = BayesSearchCV(
-        #     #     pipeline,
-        #     #     bayesian_search_spaces[tecnica],
-        #     #     cv=n_folds,
-        #     #     scoring='r2',
-        #     #     n_iter=n_iter,
-        #     #     random_state=42,
-        #     #     n_jobs=1,
-        #     #     verbose=0
-        #     # )
-        #     model = MLPRegressor(random_state=42, max_iter=500)
-        #     bayes_search = BayesSearchCV(
-        #         model,
-        #         bayesian_search_spaces[tecnica],
-        #         cv=n_folds,
-        #         scoring='r2',
-        #         n_iter=n_iter,
-        #         random_state=42,
-        #         n_jobs=1,
-        #         verbose=0
-        #     )
-
-        #     bayes_search.fit(X_train, y_train)
-        #     best_model = bayes_search.best_estimator_
-        #     best_params = bayes_search.best_params_
-        #     bayes_search.cv_results_ = None
-        #     del bayes_search
-        #     gc.collect()
-
-        # elif tecnica == 'Redes Neurais':
-        #     print(f"  Executando Redes Neurais para experimento {idx}...")
-            
-        #     # Tentar BayesSearchCV primeiro
-        #     try:
-        #         model = MLPRegressor(random_state=42, max_iter=500)
-                
-        #         # Espaço de busca simplificado e conservador
-        #         nn_space = {
-        #             'hidden_layer_sizes': Categorical([(50,), (30,)]),
-        #             'activation': Categorical(['relu', 'tanh']),
-        #             'alpha': Real(0.0001, 0.01),
-        #         }
-                
-        #         bayes_search = BayesSearchCV(
-        #             model,
-        #             nn_space,
-        #             cv=n_folds,
-        #             scoring='r2',
-        #             n_iter=3,  # Muito reduzido para estabilidade
-        #             #n_initial_points=2,
-        #             random_state=42,
-        #             n_jobs=1,
-        #             verbose=0
-        #         )
-                
-        #         bayes_search.fit(X_train, y_train)
-        #         best_model = bayes_search.best_estimator_
-        #         best_params = bayes_search.best_params_
-        #         print(f"  Bayesian Search concluído com R²: {bayes_search.best_score_:.4f}")
-                
-        #         # Limpar memória
-        #         if hasattr(bayes_search, 'cv_results_'):
-        #             bayes_search.cv_results_ = None
-        #         del bayes_search
-        #         gc.collect()
-                
-            # except Exception as e:
-            #     print(f"  Bayesian Search falhou: {str(e)[:100]}...")
-            #     print(f"  Usando modelo padrão como fallback...")
-                
-            #     # Fallback: modelo com parâmetros padrão
-            #     model = MLPRegressor(
-            #         hidden_layer_sizes=(50,),
-            #         activation='relu',
-            #         alpha=0.001,
-            #         random_state=42,
-            #         max_iter=500
-            #     )
-            #     model.fit(X_train, y_train)
-            #     best_model = model
-            #     best_params = {}
-
         elif tecnica == 'Redes Neurais':
             print(f"  Executando Redes Neurais para experimento {idx} com GridSearch (sem scaler)...")
             # warnings.filterwarnings("ignore", category=ConvergenceWarning)
@@ -893,26 +559,6 @@ for idx, experimento in df_experimentos.iterrows():
                 n_iter_no_change=20,
                 tol=1e-4
             )
-
-            # grid_search = GridSearchCV(
-            #     model,
-            #     bayesian_search_spaces[tecnica],
-            #     cv=n_folds,
-            #     scoring='r2',
-            #     n_jobs=1,
-            #     verbose=0
-            # )
-
-            # grid_search.fit(X_train, y_train)
-
-            # best_model = grid_search.best_estimator_
-            # best_params = grid_search.best_params_
-
-            # print(f"  GridSearch concluído com R²: {grid_search.best_score_:.4f}")
-
-            # # Limpar memória
-            # del grid_search
-            # gc.collect()
             executar_busca_e_avaliar(
                 nome_tecnica=tecnica,
                 modelo=model,
@@ -928,32 +574,6 @@ for idx, experimento in df_experimentos.iterrows():
                 tipo_busca="grid"
             )
             print(f"✅ Retorno da função para Redes Neurais no experimento {idx}")
-
-
-        # # Fazer predições com o melhor modelo
-        # y_pred = best_model.predict(X_test)
-
-        # r2 = r2_score(y_test, y_pred)
-        # mse = mean_squared_error(y_test, y_pred)
-
-        # # Criar nova linha com o melhor resultado
-        # nova_linha = experimento.copy()
-        # nova_linha['R²'] = r2
-        # nova_linha['MSE'] = mse
-
-        # # Adicionar colunas para os melhores hiperparâmetros
-        # for param_name, param_value in best_params.items():
-        #     # Simplificar nomes de parâmetros para colunas
-        #     col_name = str(param_name).replace('__', '_').replace('polynomialfeatures_', 'poly_')
-        #     col_name = col_name.replace('mlp__', 'nn_').replace('linearregression_', 'lr_')
-        #     nova_linha[col_name] = param_value
-
-        # resultados_expandidos.append(nova_linha)
-
-        # # Limpar memória explicitamente
-        # del X_train, X_test, y_train, y_test, y_pred, best_model
-        # if tecnica != 'Regressão Linear':
-        #     del best_params
 
     except Exception as e:
         print(f"Erro no experimento {idx} ({tecnica}): {str(e)}")
@@ -984,14 +604,6 @@ print(f"Total de combinações testadas: {len(df_resultados_final)}")
 # Salvar resultados em CSV
 df_resultados_final.to_csv('resultados_experimentacao_bayesian_otimizado.csv', index=False)
 
-# Mostrar resumo dos resultados
-# print("\nResumo dos melhores resultados por técnica:")
-# for tecnica in tecnicas:
-#     tech_results = df_resultados_final[df_resultados_final[tecnica] == 'X']
-#     if len(tech_results) > 0 and not tech_results['R²'].isna().all():
-#         best_r2_idx = tech_results['R²'].idxmax()
-#         best_r2_row = tech_results.loc[best_r2_idx]
-#         print(f"{tecnica} - Melhor R²: {best_r2_row['R²']:.4f}")
 
 print("\nResumo dos melhores resultados por técnica:")
 for tecnica in tecnicas:

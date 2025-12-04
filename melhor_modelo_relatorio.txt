@@ -1,0 +1,24 @@
+============================================================
+RELATÓRIO DO MELHOR MODELO
+============================================================
+
+Modelo: Random Forest
+R² Score: 0.204364
+MSE: 7.987086e-07
+Dataset: Completo
+Clustering: Não
+
+Hiperparâmetros:
+  Tipo de Busca: grid
+  Tempo Execução (s): 401.64
+  max_depth: 8.0
+  min_samples_leaf: 5.0
+  min_samples_split: 10.0
+  n_estimators: 80.0
+
+============================================================
+RECOMENDAÇÕES:
+============================================================
+1. Este modelo apresentou o melhor equilíbrio entre R² e MSE.
+2. Considere validar em um conjunto de testes independente.
+3. Para feature importance real, retreine o modelo com os dados originais.
