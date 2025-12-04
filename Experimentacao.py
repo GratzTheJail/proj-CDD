@@ -1,3 +1,5 @@
+## Pré processamento se encontra no link do README
+
 import pandas as pd
 import numpy as np
 import os

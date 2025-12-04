@@ -1040,6 +1040,7 @@ def main():
         plot_model_comparison_sem_redes_neurais(df, tecnicas)
 
 
+
         # Análise 2: Top 10 modelos
         print("\n" + "="*80)
         print("ANÁLISE 2: TOP 10 MODELOS (MELHORES R²)")
