@@ -603,37 +603,8 @@ df_resultados_final = pd.DataFrame(resultados_expandidos)
 # Preencher NaN para hiperparâmetros que não se aplicam a certos modelos
 df_resultados_final = df_resultados_final.fillna('N/A')
 
-print("Experimentação com Bayesian Search otimizada concluída!")
+print("Experimentação com Grid Search otimizada concluída!")
 print(f"Total de combinações testadas: {len(df_resultados_final)}")
 
 # Salvar resultados em CSV
 df_resultados_final.to_csv('resultados_experimentacao_bayesian_otimizado.csv', index=False)
-
-
-# print("\nResumo dos melhores resultados por técnica:")
-# for tecnica in tecnicas:
-#     tech_results = df_resultados_final[df_resultados_final[tecnica] == 'X']
-#     if len(tech_results) > 0:
-#         # Converter R² para numérico, forçando erros para NaN
-#         tech_results['R²_numeric'] = pd.to_numeric(tech_results['R²'], errors='coerce')
-        
-#         # Filtrar apenas valores numéricos válidos
-#         valid_results = tech_results[tech_results['R²_numeric'].notna()]
-        
-#         if len(valid_results) > 0:
-#             best_r2_idx = valid_results['R²_numeric'].idxmax()
-#             best_r2_row = valid_results.loc[best_r2_idx]
-#             best_r2 = best_r2_row['R²_numeric']
-            
-#             # Verificar se é um número
-#             if pd.notna(best_r2):
-#                 print(f"{tecnica} - Melhor R²: {best_r2:.4f}")
-#             else:
-#                 print(f"{tecnica} - Sem resultados válidos")
-#         else:
-#             print(f"{tecnica} - Sem resultados válidos")
-
-# # Mostrar as primeiras linhas dos resultados
-# print("\nPrimeiras linhas dos resultados:")
-# print(df_resultados_final.head(10))
-# executar_busca_e_avaliar

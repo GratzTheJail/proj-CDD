@@ -1011,6 +1011,448 @@ def plot_feature_importance_real(best_model_info):
     print(f"\n💾 Lista completa salva em: 'feature_importance_list_{modelo_tipo.replace(' ', '_')}.txt'")
     print(f"📊 Gráficos salvos como: 'feature_importance_REAL_{modelo_tipo.replace(' ', '_')}.png'")
 
+
+
+def plot_model_by_preprocessing(df, model_type):
+    """
+    Cria gráficos comparando o desempenho de um mesmo tipo de modelo
+    nas 4 combinações de pré-processamento.
+    
+    Parameters:
+    -----------
+    df : DataFrame
+        DataFrame com os resultados dos experimentos
+    model_type : str
+        Tipo de modelo a ser analisado (ex: 'XGBoost', 'Random Forest', etc.)
+    """
+    
+    # Filtrar apenas os dados do modelo especificado
+    model_df = df[df['Modelo'] == model_type].copy()
+    
+    if len(model_df) == 0:
+        print(f"❌ Nenhum dado encontrado para o modelo: {model_type}")
+        return
+    
+    # Criar coluna de categoria de pré-processamento
+    def create_preprocess_category(row):
+        reduzido = 'Reduzido' if row['Reduzido'] == 'X' else 'Completo'
+        clustering = 'Com_Clustering' if row['Clustering'] == 'X' else 'Sem_Clustering'
+        return f"{reduzido}_{clustering}"
+    
+    model_df['Preprocess_Category'] = model_df.apply(create_preprocess_category, axis=1)
+    
+    # Definir ordem das categorias
+    categories_order = [
+        'Completo_Sem_Clustering',
+        'Completo_Com_Clustering', 
+        'Reduzido_Sem_Clustering',
+        'Reduzido_Com_Clustering'
+    ]
+    
+    # Filtrar apenas categorias existentes
+    existing_categories = [cat for cat in categories_order if cat in model_df['Preprocess_Category'].unique()]
+    
+    print(f"\n📊 Análise do modelo: {model_type}")
+    print(f"   Total de configurações: {len(model_df)}")
+    print(f"   Categorias de pré-processamento encontradas: {existing_categories}")
+    
+    # Criar figura com múltiplos gráficos
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    fig.suptitle(f'Análise de Desempenho: {model_type}\nPor Configuração de Pré-processamento', 
+                 fontsize=18, fontweight='bold', y=1.02)
+    
+    # 1. Boxplot do R² por categoria
+    ax1 = axes[0, 0]
+    box_data = [model_df[model_df['Preprocess_Category'] == cat]['R²'].dropna() for cat in existing_categories]
+    
+    bp = ax1.boxplot(box_data, patch_artist=True, labels=existing_categories)
+    
+    # Colorir as caixas
+    colors = ['lightblue', 'lightgreen', 'lightcoral', 'lightyellow']
+    for patch, color in zip(bp['boxes'], colors[:len(existing_categories)]):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+    
+    ax1.set_title('Distribuição do R²', fontsize=14, fontweight='bold')
+    ax1.set_ylabel('R² Score', fontsize=12)
+    ax1.set_xlabel('Configuração de Pré-processamento', fontsize=12)
+    ax1.tick_params(axis='x', rotation=45)
+    ax1.grid(True, alpha=0.3, axis='y')
+    
+    # Adicionar média como ponto
+    means = [data.mean() for data in box_data]
+    for i, mean in enumerate(means):
+        ax1.scatter(i+1, mean, color='red', s=100, zorder=3, label='Média' if i == 0 else "")
+    
+    # 2. Boxplot do MSE por categoria
+    ax2 = axes[0, 1]
+    box_data_mse = [model_df[model_df['Preprocess_Category'] == cat]['MSE'].dropna() for cat in existing_categories]
+    
+    # Verificar se precisa de escala logarítmica
+    mse_values = model_df['MSE'].dropna()
+    if mse_values.max() / mse_values.min() > 1000:
+        # Usar escala logarítmica
+        bp_mse = ax2.boxplot([np.log10(data) for data in box_data_mse], 
+                            patch_artist=True, labels=existing_categories)
+        ax2.set_ylabel('log10(MSE)', fontsize=12)
+        use_log_mse = True
+    else:
+        bp_mse = ax2.boxplot(box_data_mse, patch_artist=True, labels=existing_categories)
+        ax2.set_ylabel('MSE', fontsize=12)
+        use_log_mse = False
+    
+    # Colorir as caixas
+    for patch, color in zip(bp_mse['boxes'], colors[:len(existing_categories)]):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+    
+    ax2.set_title('Distribuição do MSE', fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Configuração de Pré-processamento', fontsize=12)
+    ax2.tick_params(axis='x', rotation=45)
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    # 3. Gráfico de violino do R²
+    ax3 = axes[1, 0]
+    violin_parts = ax3.violinplot(box_data, showmeans=True, showmedians=True)
+    
+    # Colorir os violinos
+    for i, pc in enumerate(violin_parts['bodies']):
+        pc.set_facecolor(colors[i % len(colors)])
+        pc.set_alpha(0.7)
+        pc.set_edgecolor('black')
+    
+    ax3.set_title('Distribuição Detalhada do R² (Violin Plot)', fontsize=14, fontweight='bold')
+    ax3.set_ylabel('R² Score', fontsize=12)
+    ax3.set_xlabel('Configuração de Pré-processamento', fontsize=12)
+    ax3.set_xticks(range(1, len(existing_categories) + 1))
+    ax3.set_xticklabels(existing_categories, rotation=45)
+    ax3.grid(True, alpha=0.3, axis='y')
+    
+    # 4. Gráfico de barras com média e desvio padrão
+    ax4 = axes[1, 1]
+    
+    means = []
+    stds = []
+    for cat in existing_categories:
+        cat_data = model_df[model_df['Preprocess_Category'] == cat]['R²'].dropna()
+        means.append(cat_data.mean())
+        stds.append(cat_data.std())
+    
+    x_pos = np.arange(len(existing_categories))
+    bars = ax4.bar(x_pos, means, yerr=stds, capsize=10, 
+                   color=colors[:len(existing_categories)], alpha=0.7, edgecolor='black')
+    
+    ax4.set_title('Média e Desvio Padrão do R²', fontsize=14, fontweight='bold')
+    ax4.set_ylabel('R² Score (média)', fontsize=12)
+    ax4.set_xlabel('Configuração de Pré-processamento', fontsize=12)
+    ax4.set_xticks(x_pos)
+    ax4.set_xticklabels(existing_categories, rotation=45)
+    ax4.grid(True, alpha=0.3, axis='y')
+    
+    # Adicionar valores nas barras
+    for i, (bar, mean, std) in enumerate(zip(bars, means, stds)):
+        height = bar.get_height()
+        ax4.text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                f'{mean:.4f} (±{std:.4f})', ha='center', va='bottom', fontsize=10)
+    
+    plt.tight_layout()
+    plt.savefig(f'analise_preprocess_{model_type.replace(" ", "_")}.png', dpi=150, bbox_inches='tight')
+    plt.show()
+    
+    # Tabela resumo estatístico
+    print(f"\n{'='*80}")
+    print(f"ESTATÍSTICAS POR CATEGORIA - {model_type}")
+    print('='*80)
+    
+    summary_data = []
+    for cat in existing_categories:
+        cat_data = model_df[model_df['Preprocess_Category'] == cat]
+        r2_data = cat_data['R²'].dropna()
+        mse_data = cat_data['MSE'].dropna()
+        
+        summary_data.append({
+            'Categoria': cat,
+            'N': len(r2_data),
+            'R²_Média': r2_data.mean(),
+            'R²_Std': r2_data.std(),
+            'R²_Mín': r2_data.min(),
+            'R²_Máx': r2_data.max(),
+            'MSE_Média': mse_data.mean(),
+            'MSE_Std': mse_data.std()
+        })
+    
+    summary_df = pd.DataFrame(summary_data)
+    print(summary_df.to_string(index=False))
+    
+    # Salvar tabela resumo
+    summary_df.to_csv(f'resumo_preprocess_{model_type.replace(" ", "_")}.csv', index=False)
+    print(f"\n💾 Tabela resumo salva em: 'resumo_preprocess_{model_type.replace(' ', '_')}.csv'")
+    
+    return model_df
+
+
+def analyze_all_models_preprocessing(df, tecnicas):
+    """
+    Analisa o impacto do pré-processamento para todos os tipos de modelos.
+    Gera um gráfico comparativo geral.
+    """
+    print("\n" + "="*80)
+    print("ANÁLISE GERAL: IMPACTO DO PRÉ-PROCESSAMENTO EM TODOS OS MODELOS")
+    print("="*80)
+    
+    # Preparar dados para análise
+    analysis_data = []
+    
+    for model_type in tecnicas:
+        model_df = df[df['Modelo'] == model_type].copy()
+        
+        if len(model_df) == 0:
+            continue
+        
+        # Criar coluna de categoria de pré-processamento
+        def create_preprocess_category(row):
+            reduzido = 'Reduzido' if row['Reduzido'] == 'X' else 'Completo'
+            clustering = 'Clustering' if row['Clustering'] == 'X' else 'Sem_Clustering'
+            return f"{reduzido}_{clustering}"
+        
+        model_df['Preprocess_Category'] = model_df.apply(create_preprocess_category, axis=1)
+        
+        # Para cada categoria, calcular estatísticas
+        for category in model_df['Preprocess_Category'].unique():
+            cat_data = model_df[model_df['Preprocess_Category'] == category]
+            r2_mean = cat_data['R²'].mean()
+            
+            analysis_data.append({
+                'Modelo': model_type,
+                'Categoria': category,
+                'R²_Média': r2_mean,
+                'Contagem': len(cat_data)
+            })
+    
+    if not analysis_data:
+        print("❌ Nenhum dado válido para análise de pré-processamento.")
+        return
+    
+    analysis_df = pd.DataFrame(analysis_data)
+    
+    # Criar gráfico de calor
+    pivot_df = analysis_df.pivot_table(index='Modelo', columns='Categoria', 
+                                       values='R²_Média', aggfunc='mean')
+    
+    plt.figure(figsize=(14, 10))
+    sns.heatmap(pivot_df, annot=True, fmt='.4f', cmap='RdYlGn', 
+                center=0, linewidths=0.5, linecolor='gray')
+    
+    plt.title('Impacto do Pré-processamento no R² por Tipo de Modelo', 
+              fontsize=16, fontweight='bold', pad=20)
+    plt.xlabel('Configuração de Pré-processamento', fontsize=14)
+    plt.ylabel('Tipo de Modelo', fontsize=14)
+    plt.tight_layout()
+    plt.savefig('heatmap_preprocessing_all_models.png', dpi=150)
+    plt.show()
+    
+    # Gráfico de barras agrupadas
+    plt.figure(figsize=(16, 8))
+    
+    # Preparar dados para gráfico de barras
+    categories = sorted(analysis_df['Categoria'].unique())
+    models = sorted(analysis_df['Modelo'].unique())
+    
+    x = np.arange(len(models))
+    width = 0.8 / len(categories)
+    
+    for i, category in enumerate(categories):
+        category_values = []
+        for model in models:
+            value = analysis_df[(analysis_df['Modelo'] == model) & 
+                               (analysis_df['Categoria'] == category)]['R²_Média']
+            category_values.append(value.values[0] if len(value) > 0 else 0)
+        
+        offset = (i - len(categories)/2 + 0.5) * width
+        bars = plt.bar(x + offset, category_values, width, label=category, alpha=0.8)
+        
+        # Adicionar valores nas barras
+        for bar in bars:
+            height = bar.get_height()
+            if height != 0:
+                plt.text(bar.get_x() + bar.get_width()/2, height + 0.005,
+                        f'{height:.4f}', ha='center', va='bottom', fontsize=8, rotation=90)
+    
+    plt.title('Comparação do R² por Modelo e Configuração de Pré-processamento', 
+              fontsize=16, fontweight='bold', pad=20)
+    plt.xlabel('Tipo de Modelo', fontsize=14)
+    plt.ylabel('R² (média)', fontsize=14)
+    plt.xticks(x, models, rotation=45, ha='right')
+    plt.legend(title='Configuração', bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(True, alpha=0.3, axis='y')
+    plt.tight_layout()
+    plt.savefig('barplot_preprocessing_all_models.png', dpi=150)
+    plt.show()
+    
+    print("\n✅ Análise geral de pré-processamento concluída!")
+    print("📊 Gráficos salvos como:")
+    print("   - heatmap_preprocessing_all_models.png")
+    print("   - barplot_preprocessing_all_models.png")
+    
+    return analysis_df
+
+
+def analyze_kfold_impact(df):
+    """
+    Analisa o impacto do número de folds na validação cruzada.
+    Nota: Esta função assume que há colunas indicando o número de folds.
+    """
+    print("\n" + "="*80)
+    print("ANÁLISE DO IMPACTO DO K-FOLD CROSS VALIDATION")
+    print("="*80)
+    
+    # Verificar se há colunas relacionadas a K-Fold
+    kfold_cols = [col for col in df.columns if 'Fold' in col and not col.startswith('3-Fold')]
+    
+    if not kfold_cols:
+        print("❌ Nenhuma coluna de K-Fold encontrada no dataset.")
+        print("   As colunas de fold (ex: '3-Fold', '4-Fold', etc.) não estão disponíveis ou estão vazias.")
+        return None
+    
+    print(f"Colunas de K-Fold encontradas: {kfold_cols}")
+    
+    # Preparar dados para análise
+    kfold_data = []
+    
+    for _, row in df.iterrows():
+        # Verificar qual fold foi usado
+        used_fold = None
+        for fold_col in kfold_cols:
+            if pd.notna(row[fold_col]) and row[fold_col] != '':
+                used_fold = int(fold_col.replace('-Fold', ''))
+                break
+        
+        if used_fold:
+            kfold_data.append({
+                'Modelo': row['Modelo'],
+                'K_Fold': used_fold,
+                'R²': row['R²'],
+                'MSE': row['MSE'],
+                'Reduzido': row['Reduzido'],
+                'Clustering': row['Clustering']
+            })
+    
+    if not kfold_data:
+        print("❌ Nenhum dado válido de K-Fold encontrado.")
+        return None
+    
+    kfold_df = pd.DataFrame(kfold_data)
+    
+    # Criar gráficos
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    
+    # 1. Boxplot do R² por número de folds
+    ax1 = axes[0, 0]
+    fold_values = sorted(kfold_df['K_Fold'].unique())
+    box_data = [kfold_df[kfold_df['K_Fold'] == k]['R²'].dropna() for k in fold_values]
+    
+    bp1 = ax1.boxplot(box_data, patch_artist=True, labels=fold_values)
+    
+    colors = plt.cm.Set3(np.linspace(0, 1, len(fold_values)))
+    for patch, color in zip(bp1['boxes'], colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)
+    
+    ax1.set_title('Distribuição do R² por Número de Folds', fontsize=14, fontweight='bold')
+    ax1.set_xlabel('Número de Folds (K)', fontsize=12)
+    ax1.set_ylabel('R² Score', fontsize=12)
+    ax1.grid(True, alpha=0.3, axis='y')
+    
+    # 2. Média do R² por número de folds
+    ax2 = axes[0, 1]
+    mean_r2 = kfold_df.groupby('K_Fold')['R²'].mean()
+    std_r2 = kfold_df.groupby('K_Fold')['R²'].std()
+    
+    bars = ax2.bar(mean_r2.index, mean_r2.values, yerr=std_r2.values, 
+                   capsize=10, color=colors, alpha=0.7, edgecolor='black')
+    
+    ax2.set_title('Média do R² por Número de Folds', fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Número de Folds (K)', fontsize=12)
+    ax2.set_ylabel('R² Score (média)', fontsize=12)
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    # Adicionar valores nas barras
+    for bar, mean in zip(bars, mean_r2.values):
+        height = bar.get_height()
+        ax2.text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                f'{mean:.4f}', ha='center', va='bottom', fontsize=10)
+    
+    # 3. Média do MSE por número de folds (log scale se necessário)
+    ax3 = axes[1, 0]
+    mean_mse = kfold_df.groupby('K_Fold')['MSE'].mean()
+    
+    # Verificar se precisa de escala log
+    if mean_mse.max() / mean_mse.min() > 100:
+        ax3.bar(mean_mse.index, np.log10(mean_mse.values), color=colors, alpha=0.7, edgecolor='black')
+        ax3.set_ylabel('log10(MSE)', fontsize=12)
+    else:
+        ax3.bar(mean_mse.index, mean_mse.values, color=colors, alpha=0.7, edgecolor='black')
+        ax3.set_ylabel('MSE', fontsize=12)
+    
+    ax3.set_title('Média do MSE por Número de Folds', fontsize=14, fontweight='bold')
+    ax3.set_xlabel('Número de Folds (K)', fontsize=12)
+    ax3.grid(True, alpha=0.3, axis='y')
+    
+    # 4. Contagem de experimentos por número de folds
+    ax4 = axes[1, 1]
+    count_by_fold = kfold_df['K_Fold'].value_counts().sort_index()
+    
+    bars_count = ax4.bar(count_by_fold.index, count_by_fold.values, 
+                         color=colors[:len(count_by_fold)], alpha=0.7, edgecolor='black')
+    
+    ax4.set_title('Número de Experimentos por Folds', fontsize=14, fontweight='bold')
+    ax4.set_xlabel('Número de Folds (K)', fontsize=12)
+    ax4.set_ylabel('Número de Experimentos', fontsize=12)
+    ax4.grid(True, alpha=0.3, axis='y')
+    
+    # Adicionar valores nas barras
+    for bar, count in zip(bars_count, count_by_fold.values):
+        height = bar.get_height()
+        ax4.text(bar.get_x() + bar.get_width()/2., height + 0.5,
+                f'{count}', ha='center', va='bottom', fontsize=10)
+    
+    plt.suptitle('Análise do Impacto do K-Fold Cross Validation no Desempenho dos Modelos', 
+                 fontsize=16, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    plt.savefig('kfold_impact_analysis.png', dpi=150)
+    plt.show()
+    
+    # Tabela resumo
+    print("\n📊 RESUMO DO IMPACTO DO K-FOLD:")
+    summary = kfold_df.groupby('K_Fold').agg({
+        'R²': ['count', 'mean', 'std', 'min', 'max'],
+        'MSE': ['mean', 'std']
+    }).round(4)
+    
+    print(summary)
+    
+    # Teste estatístico (ANOVA) para verificar diferenças significativas
+    print("\n🔬 TESTE ESTATÍSTICO - ANOVA:")
+    from scipy import stats
+    
+    anova_groups = [kfold_df[kfold_df['K_Fold'] == k]['R²'].dropna().values for k in fold_values]
+    
+    if all(len(group) > 0 for group in anova_groups):
+        f_stat, p_value = stats.f_oneway(*anova_groups)
+        print(f"  F-statistic: {f_stat:.4f}")
+        print(f"  p-value: {p_value:.4f}")
+        
+        if p_value < 0.05:
+            print("  ✅ Há diferenças estatisticamente significativas entre os grupos (p < 0.05)")
+        else:
+            print("  ❌ Não há diferenças estatisticamente significativas entre os grupos (p ≥ 0.05)")
+    else:
+        print("  ⚠️  Não foi possível realizar ANOVA (grupos com tamanho insuficiente)")
+    
+    return kfold_df
+
+
+
 def main():
     """Função principal"""
     
@@ -1038,9 +1480,7 @@ def main():
         
         best_by_model_df = plot_model_comparison(df, tecnicas)
         plot_model_comparison_sem_redes_neurais(df, tecnicas)
-
-
-
+        
         # Análise 2: Top 10 modelos
         print("\n" + "="*80)
         print("ANÁLISE 2: TOP 10 MODELOS (MELHORES R²)")
@@ -1053,10 +1493,29 @@ def main():
         print("="*80)
         best_model = select_best_model(df)
         
+        # ANÁLISE NOVA 4: Impacto do pré-processamento em modelos específicos
+        print("\n" + "="*80)
+        print("ANÁLISE 4: IMPACTO DO PRÉ-PROCESSAMENTO EM MODELOS ESPECÍFICOS")
+        print("="*80)
+        
+        # Analisar modelos específicos (os mais importantes)
+        models_to_analyze = ['XGBoost', 'Random Forest', 'Árvore de Decisão', 
+                            'Regressão Linear Bayesiana', 'K-NN']
+        
+        for model_type in models_to_analyze:
+            if model_type in df['Modelo'].unique():
+                plot_model_by_preprocessing(df, model_type)
+        
+        # ANÁLISE NOVA 5: Análise geral de pré-processamento
+        analyze_all_models_preprocessing(df, tecnicas)
+        
+        # ANÁLISE NOVA 6: Impacto do K-Fold (se disponível)
+        analyze_kfold_impact(df)
+        
         if best_model is not None:
-            # Análise 4: Feature Importance (simulação)
+            # Análise 7: Feature Importance (simulação)
             print("\n" + "="*80)
-            print("ANÁLISE 4: FEATURE IMPORTANCE DO MELHOR MODELO")
+            print("ANÁLISE 7: FEATURE IMPORTANCE DO MELHOR MODELO")
             print("="*80)
             plot_feature_importance_real(best_model)
             
@@ -1109,6 +1568,8 @@ def main():
         print("❌ Erro: O arquivo CSV está vazio!")
     except Exception as e:
         print(f"❌ Erro inesperado: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
